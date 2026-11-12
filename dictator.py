@@ -17,6 +17,7 @@ from dictator.config import MODES, Config, appdata_dir, config_file, ensure_mode
 from dictator.hotkey import HotkeyController
 from dictator.injector import insert_text
 from dictator.instance import SingleInstance
+from dictator.polish import PolishService
 from dictator.recorder import Recorder, log_input_devices
 from dictator.tray import Tray, TrayCallbacks, play_start, play_stop
 
@@ -37,6 +38,7 @@ class DictatorApp:
         self._recorder = Recorder(self._end)
         self._hotkey = HotkeyController(self._on_press, self._on_release)
         self._asr = AsrService(self._snapshot, self._notify)
+        self._polish = PolishService(self._snapshot, self._notify)
         self._tray = Tray(
             self._snapshot,
             TrayCallbacks(
@@ -44,6 +46,7 @@ class DictatorApp:
                 set_model=self.set_model,
                 set_language=self.set_language,
                 toggle_sound=self.toggle_sound,
+                toggle_llm=self.toggle_llm,
                 open_config=self.open_config,
                 reload_config=self.reload_config,
                 quit_app=self.quit,
@@ -55,6 +58,7 @@ class DictatorApp:
         self._prepare_model_dir()
         self._bind_hotkey()
         self._asr.start()
+        self._polish.preload()
         self._tray.run()
 
     def shutdown(self) -> None:
@@ -67,6 +71,7 @@ class DictatorApp:
         except Exception:
             log.exception("остановка записи при выходе")
         self._asr.close()
+        self._polish.close()
 
     def quit(self) -> None:
         self._tray.stop()
@@ -104,6 +109,15 @@ class DictatorApp:
             self._config.save()
         self._tray.refresh()
 
+    def toggle_llm(self) -> None:
+        with self._config_lock:
+            self._config.llm = not self._config.llm
+            self._config.save()
+            enabled = self._config.llm
+        if enabled:
+            self._polish.preload()
+        self._tray.refresh()
+
     def open_config(self) -> None:
         path = config_file()
         with self._config_lock:
@@ -125,6 +139,7 @@ class DictatorApp:
         self._bind_hotkey(hotkey, mode)
         self._prepare_model_dir()
         self._asr.preload()
+        self._polish.preload()
         self._tray.refresh()
         self._notify("Настройки применены")
 
@@ -209,6 +224,7 @@ class DictatorApp:
         self._asr.submit(recording.samples, self._on_text, self._notify)
 
     def _on_text(self, text: str) -> None:
+        text = self._polish.correct(text)
         mode = self._snapshot().insert_mode
         try:
             typed = insert_text(text, mode)

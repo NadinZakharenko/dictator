@@ -28,6 +28,7 @@ class TrayCallbacks:
         set_model: Callable[[str], None],
         set_language: Callable[[str], None],
         toggle_sound: Callable[[], None],
+        toggle_llm: Callable[[], None],
         open_config: Callable[[], None],
         reload_config: Callable[[], None],
         quit_app: Callable[[], None],
@@ -36,6 +37,7 @@ class TrayCallbacks:
         self.set_model = set_model
         self.set_language = set_language
         self.toggle_sound = toggle_sound
+        self.toggle_llm = toggle_llm
         self.open_config = open_config
         self.reload_config = reload_config
         self.quit_app = quit_app
@@ -175,6 +177,11 @@ class Tray:
                 "Звук",
                 lambda _icon, _item: self._callbacks.toggle_sound(),
                 checked=lambda _item: self._get_config().sound,
+            ),
+            pystray.MenuItem(
+                "Правка ИИ",
+                lambda _icon, _item: self._callbacks.toggle_llm(),
+                checked=lambda _item: self._get_config().llm,
             ),
             pystray.MenuItem(
                 "Автозапуск",

@@ -197,8 +197,7 @@ class Recorder:
     def _on_audio(self, indata: np.ndarray, _frames: int, _time: object, status: sd.CallbackFlags) -> None:
         if status:
             log.warning("аудиопоток: %s", status)
-        block = indata[:, 0] if self._channels == 1 else indata.mean(axis=1)
-        self._queue.put(np.ascontiguousarray(block, dtype=np.float32))
+        self._queue.put(_capture_block(indata, self._channels))
 
     def _loop(self) -> None:
         pending = np.empty(0, dtype=np.float32)
@@ -266,6 +265,14 @@ class Recorder:
             stream.close()
         except Exception:
             log.exception("не удалось закрыть микрофон")
+
+
+def _capture_block(indata: np.ndarray, channels: int) -> np.ndarray:
+    # PortAudio переиспользует indata после callback. Срез моноканала уже непрерывный,
+    # и ascontiguousarray вернул бы тот же буфер: к моменту распознавания в нём остался
+    # только последний кадр, поэтому Silero выбрасывала всю запись.
+    source = indata[:, 0] if channels == 1 else indata.mean(axis=1)
+    return np.array(source, dtype=np.float32, copy=True)
 
 
 def _device_format(device: int | str | None) -> tuple[int, int]:

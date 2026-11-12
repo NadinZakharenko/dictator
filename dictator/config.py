@@ -53,6 +53,7 @@ class Config:
     model_dir: str = ""
     insert_mode: str = "unicode"
     vad_threshold: float = 0.5
+    llm: bool = False
 
     def resolved_model_dir(self) -> Path:
         if self.model_dir.strip():
@@ -98,6 +99,7 @@ class Config:
                 raw.get("insert_mode"), INSERT_MODES, "unicode", "insert_mode", target
             ),
             vad_threshold=_threshold(raw.get("vad_threshold"), target),
+            llm=_bool(raw.get("llm"), False, "llm", target),
         )
 
 

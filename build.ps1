@@ -24,6 +24,7 @@ $ErrorActionPreference = "Continue"
     --collect-all av `
     --collect-all huggingface_hub `
     --collect-all sounddevice `
+    --collect-all llama_cpp `
     --hidden-import numpy `
     --distpath $Dist `
     (Join-Path $Root "dictator.py")

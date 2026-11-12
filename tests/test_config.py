@@ -46,6 +46,7 @@ class ConfigTests(unittest.TestCase):
         self.assertTrue(loaded.sound)
         self.assertEqual(loaded.hotkey, "f9")
         self.assertEqual(loaded.language_code(), "ru")
+        self.assertFalse(loaded.llm)
 
     def test_auto_language_has_no_code(self) -> None:
         self.assertIsNone(Config(language="auto").language_code())

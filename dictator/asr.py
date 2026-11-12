@@ -141,6 +141,8 @@ class AsrService:
             vad_filter=True,
             initial_prompt=prompt,
             condition_on_previous_text=False,
-            without_timestamps=True,
+            # Без меток времени декодер ставит конец текста на первой фразе
+            # и пропускает остаток окна, поэтому длинная диктовка обрывается.
+            without_timestamps=False,
         )
         return "".join(segment.text for segment in segments)
